@@ -30,8 +30,8 @@ def initialize_session_state():
         st.session_state.cliente_estado_input = ""
 
         # Controles para mostrar/ocultar seções
-        st.session_state.show_endereco_entrega = False # Novo
-        st.session_state.show_referencias = False # Novo
+        st.session_state.show_endereco_entrega = False
+        st.session_state.show_referencias = False
 
         # Endereço de Entrega
         st.session_state.entrega_cep_input = ""
@@ -133,20 +133,21 @@ def app():
 
     # --- Opção para Endereço de Entrega ---
     st.markdown("---")
-    # O valor do checkbox agora controla o estado da sessão diretamente
     st.session_state.show_endereco_entrega = st.checkbox("Cadastrar Endereço de Entrega (se diferente do principal)", value=st.session_state.show_endereco_entrega, key="show_endereco_entrega_checkbox")
 
     if st.session_state.show_endereco_entrega:
         st.header("Endereço de Entrega")
-        st.write("Preencha o endereço de entrega.")
+        # Removido o asterisco e a menção de "obrigatórios" aqui, pois não serão validados
+        st.write("Preencha o endereço de entrega (opcional).") 
 
-        entrega_cep = st.text_input("CEP Entrega*", value=st.session_state.entrega_cep_input, max_chars=9, help="Código de Endereçamento Postal (somente números).", key="entrega_cep_input")
-        entrega_rua = st.text_input("Rua/Avenida Entrega*", value=st.session_state.entrega_rua_input, help="Nome da rua ou avenida.", key="entrega_rua_input")
-        entrega_numero = st.text_input("Número Entrega*", value=st.session_state.entrega_numero_input, help="Número do imóvel.", key="entrega_numero_input")
+        # Os campos de texto aqui não têm asterisco para indicar que não são obrigatórios
+        entrega_cep = st.text_input("CEP Entrega", value=st.session_state.entrega_cep_input, max_chars=9, help="Código de Endereçamento Postal (somente números).", key="entrega_cep_input")
+        entrega_rua = st.text_input("Rua/Avenida Entrega", value=st.session_state.entrega_rua_input, help="Nome da rua ou avenida.", key="entrega_rua_input")
+        entrega_numero = st.text_input("Número Entrega", value=st.session_state.entrega_numero_input, help="Número do imóvel.", key="entrega_numero_input")
         entrega_complemento = st.text_input("Complemento Entrega", value=st.session_state.entrega_complemento_input, help="Ex: Apartamento, Bloco, Sala.", key="entrega_complemento_input")
-        entrega_bairro = st.text_input("Bairro Entrega*", value=st.session_state.entrega_bairro_input, help="Nome do bairro.", key="entrega_bairro_input")
-        entrega_cidade = st.text_input("Cidade Entrega*", value=st.session_state.entrega_cidade_input, help="Nome da cidade.", key="entrega_cidade_input")
-        entrega_estado = st.text_input("Estado Entrega*", value=st.session_state.entrega_estado_input, help="Ex: CE, SP, MG", key="entrega_estado_input").upper()
+        entrega_bairro = st.text_input("Bairro Entrega", value=st.session_state.entrega_bairro_input, help="Nome do bairro.", key="entrega_bairro_input")
+        entrega_cidade = st.text_input("Cidade Entrega", value=st.session_state.entrega_cidade_input, help="Nome da cidade.", key="entrega_cidade_input")
+        entrega_estado = st.text_input("Estado Entrega", value=st.session_state.entrega_estado_input, help="Ex: CE, SP, MG", key="entrega_estado_input").upper()
     else:
         # Se a seção não for exibida, garantimos que as variáveis tenham valores vazios
         entrega_cep, entrega_rua, entrega_numero, entrega_complemento, entrega_bairro, entrega_cidade, entrega_estado = ("", "", "", "", "", "", "")
@@ -161,12 +162,11 @@ def app():
 
     # --- Opção para Referências ---
     st.markdown("---")
-    # O valor do checkbox agora controla o estado da sessão diretamente
     st.session_state.show_referencias = st.checkbox("Cadastrar Referências", value=st.session_state.show_referencias, key="show_referencias_checkbox")
 
     if st.session_state.show_referencias:
         st.header("Referências")
-        st.write("Forneça até 3 referências (pessoas ou empresas que possam atestar sobre o cliente).")
+        st.write("Forneça até 3 referências (pessoas ou empresas que possam atestar sobre o cliente). Os campos são opcionais.") # Adicionado "opcionais"
         referencia1_nome = st.text_input("Nome Referência 1", value=st.session_state.ref1_nome, key="ref1_nome")
         referencia1_contato = st.text_input("Contato Referência 1 (Telefone/Email)", value=st.session_state.ref1_contato, key="ref1_contato")
         referencia2_nome = st.text_input("Nome Referência 2", value=st.session_state.ref2_nome, key="ref2_nome")
@@ -190,15 +190,10 @@ def app():
 
     with col1:
         if st.button("Gerar e Baixar Ficha em Excel", type="primary", use_container_width=True):
-            # --- Validação dos Campos Obrigatórios ---
+            # --- Validação dos Campos Obrigatórios (APENAS os principais) ---
             if not (nome and documento and telefone and cliente_cep and cliente_logradouro and
                     cliente_numero and cliente_bairro and cliente_cidade and cliente_estado):
-                st.error("🚨 Por favor, preencha todos os campos obrigatórios (marcados com *).")
-            # Validação para endereço de entrega SE a opção for marcada
-            elif st.session_state.show_endereco_entrega and not (entrega_cep and entrega_rua and
-                                                                 entrega_numero and entrega_bairro and
-                                                                 entrega_cidade and entrega_estado):
-                st.error("🚨 Por favor, preencha todos os campos obrigatórios do Endereço de Entrega.")
+                st.error("🚨 Por favor, preencha todos os campos obrigatórios (marcados com *) da seção 'Informações Pessoais/Empresariais' e 'Endereço do Cliente (Sede/Principal)'.")
             else:
                 # --- Coleta e Organização dos Dados ---
                 dados_cliente = {
@@ -229,16 +224,16 @@ def app():
                     "Observações": observacao if observacao else "Nenhuma observação."
                 }
 
-                # Preenche Endereço de Entrega se for cadastrado
+                # Preenche Endereço de Entrega se for cadastrado (campos podem ser vazios)
                 if st.session_state.show_endereco_entrega:
                     dados_cliente["Endereço de Entrega (Opcional)"] = {
-                        "CEP": entrega_cep,
-                        "Rua/Avenida": entrega_rua,
-                        "Número": entrega_numero,
+                        "CEP": entrega_cep if entrega_cep else "Não informado",
+                        "Rua/Avenida": entrega_rua if entrega_rua else "Não informado",
+                        "Número": entrega_numero if entrega_numero else "Não informado",
                         "Complemento": entrega_complemento if entrega_complemento else "Não informado",
-                        "Bairro": entrega_bairro,
-                        "Cidade": entrega_cidade,
-                        "Estado": entrega_estado
+                        "Bairro": entrega_bairro if entrega_bairro else "Não informado",
+                        "Cidade": entrega_cidade if entrega_cidade else "Não informado",
+                        "Estado": entrega_estado if entrega_estado else "Não informado"
                     }
                 else: # Se não for para cadastrar, preenche com "Não informado"
                      dados_cliente["Endereço de Entrega (Opcional)"] = {
@@ -247,14 +242,19 @@ def app():
                         "Estado": "Não informado"
                     }
 
-                # Preenche Referências se for cadastrado
+                # Preenche Referências se for cadastrado (campos podem ser vazios)
                 if st.session_state.show_referencias:
-                    if referencia1_nome:
-                        dados_cliente["Referências"].append({"Nome": referencia1_nome, "Contato": referencia1_contato})
-                    if referencia2_nome:
-                        dados_cliente["Referências"].append({"Nome": referencia2_nome, "Contato": referencia2_contato})
-                    if referencia3_nome:
-                        dados_cliente["Referências"].append({"Nome": referencia3_nome, "Contato": referencia3_contato})
+                    # Adiciona referências apenas se o nome ou contato for preenchido
+                    if referencia1_nome or referencia1_contato:
+                        dados_cliente["Referências"].append({"Nome": referencia1_nome if referencia1_nome else "Não informado", "Contato": referencia1_contato if referencia1_contato else "Não informado"})
+                    if referencia2_nome or referencia2_contato:
+                        dados_cliente["Referências"].append({"Nome": referencia2_nome if referencia2_nome else "Não informado", "Contato": referencia2_contato if referencia2_contato else "Não informado"})
+                    if referencia3_nome or referencia3_contato:
+                        dados_cliente["Referências"].append({"Nome": referencia3_nome if referencia3_nome else "Não informado", "Contato": referencia3_contato if referencia3_contato else "Não informado"})
+                    
+                    # Se a opção foi marcada, mas nenhuma referência foi adicionada, adicione uma linha "Não informado"
+                    if not dados_cliente["Referências"]:
+                        dados_cliente["Referências"].append({"Nome": "Não informado", "Contato": "Não informado"})
                 else: # Se não for para cadastrar, preenche com "Não informado"
                     dados_cliente["Referências"].append({"Nome": "Não informado", "Contato": "Não informado"})
 
@@ -301,11 +301,6 @@ def app():
                     data_for_excel.append({"Campo": f"Referência {i+1} Nome", "Valor": ref['Nome']})
                     data_for_excel.append({"Campo": f"Referência {i+1} Contato", "Valor": ref['Contato']})
                 
-                # Se nenhuma referência foi informada, garantir que apareça "Não informado"
-                if not dados_cliente["Referências"] and not st.session_state.show_referencias:
-                     data_for_excel.append({"Campo": "Referências", "Valor": "Não informado"})
-
-
                 data_for_excel.append({"Campo": "Observações", "Valor": dados_cliente['Observações']})
 
                 df = pd.DataFrame(data_for_excel)
